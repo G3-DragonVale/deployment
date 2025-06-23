@@ -5,9 +5,9 @@ metadata:
   name: db-secret
 type: Opaque
 data:
-  POSTGRES_USER: am9zaWFubmU= # "josianne" (base64)
-  POSTGRES_PASSWORD: am9zaWFubmU= # "josianne" (base64)
-  POSTGRES_DB: ZzNkYXRh # "g3data" (base64)
+  POSTGRES_USER: am9zaWFubmU=
+  POSTGRES_PASSWORD: am9zaWFubmU=
+  POSTGRES_DB: ZzNkYXRh
 
 ---
 # 2. Headless Service for StatefulSet
@@ -126,7 +126,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: cessouille/g3-dragonvale-backend:1.1.0
+          image: cessouille/g3-dragonvale-backend:1.1.3
           env:
             - name: DATABASE_URL
               value: "postgresql://josianne:josianne@postgres:5432/g3data?schema=public"
@@ -170,7 +170,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: cessouille/g3-dragonvale-frontend:1.1.0
+          image: cessouille/g3-dragonvale-frontend:1.1.5
           ports:
             - containerPort: 80
 
@@ -209,6 +209,16 @@ spec:
                 name: backend
                 port:
                   number: 3000
+    - host: localhost
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 3000
 
 ---
 # Ingress for frontend (no rewrite)
@@ -223,6 +233,16 @@ spec:
       secretName: g3-frontend-tls
   rules:
     - host: g3-frontend.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+    - host: localhost
       http:
         paths:
           - path: /
