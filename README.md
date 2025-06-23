@@ -68,4 +68,4 @@ kubectl get pods -n g3
 ---
 
 > **Note:**  
-> You must have a self-signed certificate to use the web application over
+> You must have a self-signed certificate to use the web application.
