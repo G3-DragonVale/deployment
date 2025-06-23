@@ -126,7 +126,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: cessouille/g3-dragonvale-backend:1.1.3
+          image: cessouille/g3-dragonvale-backend:1.1.4
           env:
             - name: DATABASE_URL
               value: "postgresql://josianne:josianne@postgres:5432/g3data?schema=public"
@@ -189,38 +189,6 @@ spec:
     app: frontend
 
 ---
-# 6. Ingress for API (with rewrite)
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: backend-ingress
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/use-regex: "true"
-spec:
-  rules:
-    - host: g3-frontend.local
-      http:
-        paths:
-          - path: /api(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: backend
-                port:
-                  number: 3000
-    - host: localhost
-      http:
-        paths:
-          - path: /api(/|$)(.*)
-            pathType: ImplementationSpecific
-            backend:
-              service:
-                name: backend
-                port:
-                  number: 3000
-
----
 # Ingress for frontend (no rewrite)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -242,6 +210,13 @@ spec:
                 name: frontend
                 port:
                   number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 3000
     - host: localhost
       http:
         paths:
@@ -252,23 +227,31 @@ spec:
                 name: frontend
                 port:
                   number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 3000
 
 ---
 # 7. NetworkPolicies to restrict access
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-frontend-and-ingress-to-backend
+  name: network-frontend-to-backend
 spec:
   podSelector:
     matchLabels:
       app: backend
+  policyTypes:
+    - Ingress
   ingress:
     - from:
         - podSelector:
             matchLabels:
               app: frontend
-        - namespaceSelector: {} # allow from ingress controller in kube-system
       ports:
         - protocol: TCP
           port: 3000
@@ -277,11 +260,13 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-backend-to-db
+  name: network-backend-to-db
 spec:
   podSelector:
     matchLabels:
       app: postgres
+  policyTypes:
+    - Ingress
   ingress:
     - from:
         - podSelector:
