@@ -1,8 +1,16 @@
+# 0. Create a namespace for the project
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: g3
+
+---
 # 1. Secrets for sensitive data
 apiVersion: v1
 kind: Secret
 metadata:
   name: db-secret
+  namespace: g3
 type: Opaque
 data:
   POSTGRES_USER: am9zaWFubmU=
@@ -15,6 +23,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
+  namespace: g3
 spec:
   clusterIP: None
   ports:
@@ -24,11 +33,12 @@ spec:
     app: postgres
 
 ---
-# 3. StatefulSet for PostgreSQL (2 replicas, each with its own PVC)
+# 3. StatefulSet for PostgreSQL
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
+  namespace: g3
 spec:
   serviceName: "postgres"
   replicas: 1
@@ -74,11 +84,12 @@ spec:
             storage: 1Gi
 
 ---
-# Redis Deployment
+# 4. Redis Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
+  namespace: g3
 spec:
   replicas: 1
   selector:
@@ -96,10 +107,12 @@ spec:
             - containerPort: 6379
 
 ---
+# 5. Redis Service
 apiVersion: v1
 kind: Service
 metadata:
   name: redis
+  namespace: g3
 spec:
   type: ClusterIP
   ports:
@@ -109,11 +122,12 @@ spec:
     app: redis
 
 ---
-# 4. Backend (API server) Deployment (with HA)
+# 6. Backend Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
+  namespace: g3
 spec:
   replicas: 2
   selector:
@@ -140,10 +154,12 @@ spec:
             - containerPort: 3000
 
 ---
+# 7. Backend Service
 apiVersion: v1
 kind: Service
 metadata:
   name: backend
+  namespace: g3
 spec:
   type: ClusterIP
   ports:
@@ -153,11 +169,12 @@ spec:
     app: backend
 
 ---
-# 5. Frontend (client + IHM) Deployment (with HA)
+# 8. Frontend Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
+  namespace: g3
 spec:
   replicas: 1
   selector:
@@ -175,10 +192,12 @@ spec:
             - containerPort: 80
 
 ---
+# 9. Frontend Service
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend
+  namespace: g3
 spec:
   type: NodePort
   ports:
@@ -189,11 +208,12 @@ spec:
     app: frontend
 
 ---
-# Ingress for frontend (no rewrite)
+# 10. Ingress for frontend
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: frontend-ingress
+  namespace: g3
 spec:
   tls:
     - hosts:
@@ -236,11 +256,12 @@ spec:
                   number: 3000
 
 ---
-# 7. NetworkPolicies to restrict access
+# 11. NetworkPolicies to restrict access
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: network-frontend-to-backend
+  namespace: g3
 spec:
   podSelector:
     matchLabels:
@@ -261,6 +282,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: network-backend-to-db
+  namespace: g3
 spec:
   podSelector:
     matchLabels:
@@ -277,10 +299,12 @@ spec:
           port: 5432
 
 ---
+# 12. Job to initialize the database
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: db-init
+  namespace: g3
 spec:
   template:
     spec:
@@ -296,11 +320,11 @@ spec:
           command: ["/bin/bash", "-c"]
           args:
             - |
-              # Wait for backend to create the DB
+              # Wait for the backend to create the DB
               until psql -h postgres -U josianne -lqt | cut -d \| -f 1 | grep -qw g3data; do
                 echo "Waiting for DB creation..."; sleep 5;
               done
-              # Run your init script (replace with your actual script)
+              # Run the initialization script
               psql -h postgres -U josianne -d g3data -f /init/init.sql
           volumeMounts:
             - name: init-script
