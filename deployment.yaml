@@ -140,7 +140,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: cessouille/g3-dragonvale-backend:1.1.5
+          image: cessouille/g3-dragonvale-backend:2.0.0
           env:
             - name: DATABASE_URL
               value: "postgresql://josianne:josianne@postgres:5432/g3data?schema=public"
@@ -187,7 +187,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: cessouille/g3-dragonvale-frontend:1.1.5
+          image: cessouille/g3-dragonvale-frontend:2.0.0
           ports:
             - containerPort: 80
 
