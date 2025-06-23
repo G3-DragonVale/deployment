@@ -58,7 +58,7 @@ spec:
           env:
             - name: PGPASSWORD
               value: POSTGRES_PASSWORD
-          command: [ 'sh', '-c', 'psql -h REDIS_HOST -U POSTGRES_USER -d POSTGRES_DB -f ./sql/insert.sql' ]
+          command: [ 'sh', '-c', 'psql -h $REDIS_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f ./sql/insert.sql' ]
           volumeMounts:
             - name: db-init-script
               mountPath: /sql/insert.sql
