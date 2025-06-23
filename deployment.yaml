@@ -34,7 +34,8 @@ spec:
 
 
 ---
-# 3. StatefulSet for PostgreSQL (2 replicas, each with its own PVC)
+
+# 3 StatefulSet for PostgreSQL (2 replicas, each with its own PVC)
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -61,12 +62,11 @@ spec:
           volumeMounts:
             - name: db-init-script
               mountPath: /sql/insert.sql
-              subPath: /sql/insert.sql
+              subPath: ./sql/insert.sql
 
       volumes:
         - name: db-init-script
           configMap:
-            name: db-init-sql
             name: db-init-sql
       containers:
         - name: postgres
@@ -144,6 +144,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
+  namespace: g3
 spec:
   replicas: 2
   selector:
