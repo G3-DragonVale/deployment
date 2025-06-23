@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: josianne
+      POSTGRES_PASSWORD: josianne
+      POSTGRES_DB: g3data
+    volumes:
+      - g3data:/var/lib/postgresql/data
+    ports:
+      - '5433:5432'
+    networks:
+      - g3net
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - '5050:80'
+    depends_on:
+      - postgres
+    networks:
+      - g3net
+
+  backend:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    env_file:
+      - ./back/.env
+    ports:
+      - '3001:3000'
+    depends_on:
+      - postgres
+    networks:
+      - g3net
+
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    env_file:
+      - ./front/.env
+    ports:
+      - '8888:80'
+    networks:
+      - g3net
+
+volumes:
+  g3data:
+
+networks:
+  g3net:
